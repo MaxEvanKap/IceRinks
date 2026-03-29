@@ -40,24 +40,9 @@ namespace IceRinks
 
 
 
-            int[] pred = BFS(graph, m * n);
-            for (int i = 0; i < pred.Length; i++)
-            {
-                Console.WriteLine($"{i}: predecessor is {pred[i] - 1}");
-            }
+            LinkedList<int> pred = BFS(graph, m * n);
+            foreach (int t in pred) Console.WriteLine(t);
 
-            
-            for (int i = 0; i < m * n + 1; i++)
-            {
-                Console.Write(i + ": ");
-                LinkedListNode<Node> node = graph[i].First; 
-                while (node != null)
-                {
-                    Console.Write(node.Value.Value + $"({node.Value.Capacity}), ");
-                    node = node.Next;
-                }
-                Console.WriteLine();
-            }
             
         }
 
@@ -94,7 +79,7 @@ namespace IceRinks
                 if (ni >= 0 && ni < m && nj >= 0 && nj < n)
                 {
                     Node nghb = new Node(ni * n + nj, 32 - Math.Abs(thick[i, j] - thick[ni,nj]));
-                    graph[i * n + j].AddLast(nghb);
+                    graph[i * n + j].AddFirst(nghb);
                 }
             }
             Node toT = new Node(m*n + 1, 32 - thick[i, j]); // add sink to adjacency list
@@ -104,7 +89,7 @@ namespace IceRinks
             graph[m * n].AddFirst(fromS);
         }
 
-        static int[] BFS(LinkedList<Node>[] graph, int node)
+        static LinkedList<int> BFS(LinkedList<Node>[] graph, int node)
         {
             
             int[] pred = new int[graph.Length];
@@ -118,17 +103,22 @@ namespace IceRinks
                 LinkedListNode<Node> next = graph[j].First;
                 while (next != null)
                 {
-                    if (pred[next.Value.Value] == 0)
+                    if (pred[next.Value.Pos] == 0)
                     {
-                        pred[next.Value.Value] = j + 1; // predecessor + 1 because of int not nullable
-                        queue.Enqueue(next.Value.Value);
+                        pred[next.Value.Pos] = j + 1; // predecessor + 1 because of int not nullable
+                        queue.Enqueue(next.Value.Pos);
                     }
                     next = next.Next;
                 }
             }
-
-            int i = pred.Length - 1;            
-            return pred; // returns start of path from s to t
+            int i = pred.Length - 1;
+            LinkedList<int> Path = new(); Path.AddFirst(i);
+            while (pred[i] != -1)
+            {
+                Path.AddFirst(pred[i] -1);
+                i = pred[i] - 1;
+            }
+            return Path; // returns start of path from s to t
 
         }
     }
@@ -139,14 +129,14 @@ namespace IceRinks
     // and the next neigbour in the linked list
     public class Node
     {
-        public int Value;
+        public int Pos;
         public int Flow;
         public int Capacity;
         public bool Forward;
 
         public Node(int Value, int Capacity)
         {
-            this.Value = Value;
+            this.Pos = Value;
             this.Flow = 0;
             this.Capacity = Capacity;
             this.Forward = true;
@@ -155,13 +145,13 @@ namespace IceRinks
         public override bool Equals(object obj)
         {
             var item = obj as Node;
-            return item.Value == this.Value;
+            return item.Pos == this.Pos;
 
         }
 
         public override string ToString()
         {
-            return $"{Value}, {Capacity}";
+            return $"{Pos}, {Capacity}";
         }
     }
 
