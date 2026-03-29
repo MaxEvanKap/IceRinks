@@ -8,7 +8,6 @@ namespace IceRinks
         //t = m * n + 1, s = m*n
         static void Main(string[] args)
         {
-
             // read input
             int m = int.Parse(Console.ReadLine());
             int n = int.Parse(Console.ReadLine());
@@ -37,7 +36,8 @@ namespace IceRinks
             }
             //create first residual graph as copy of original graph
             LinkedList<Node>[] residual = CreateResidualGraph(graph);
-
+            EdmondsKarp(residual);
+            
 
 
             LinkedList<Node> path = BFS(graph, m * n);
@@ -45,6 +45,17 @@ namespace IceRinks
             Console.WriteLine("minimale capaciteit = " + minCapacity(path));
 
             
+        }
+
+        //Alters the residual graph until there is no more path from s to t (maximum flow)
+        static void EdmondsKarp(LinkedList<Node>[] graph)
+        {
+            while (true)
+            {
+                LinkedList<Node> path = BFS(graph, graph.Length - 2);
+                if (path == null) break;
+                AlterResidual(graph, path);
+            }
         }
 
         //create the original residual graph
@@ -63,6 +74,23 @@ namespace IceRinks
             return residual;
         }
 
+        static void AlterResidual(LinkedList<Node>[] residual, LinkedList<Node> path)
+        {
+            int mc = minCapacity(path);
+            LinkedListNode<Node> current = path.First;
+            int pred = residual.Length - 2;
+            while (current != null)
+            {
+                if (current.Value.Capacity - mc == 0) residual[pred].Remove(current.Value);
+                else current.Value.Capacity -= mc;
+                LinkedListNode<Node> a = residual[current.Value.Pos].Find(new Node(pred, -1, !current.Value.Forward));
+                if (a == null) residual[current.Value.Pos].AddFirst(new Node(pred, mc, !current.Value.Forward));
+                else a.Value.Capacity += mc;
+                pred = current.Value.Pos;
+                current = current.Next;
+            }
+
+        }
 
         static void AddNeighbours(int i, int j, int[,] thick, LinkedList<Node>[] graph)
         {
@@ -79,17 +107,19 @@ namespace IceRinks
                 int nj = j + dj;
                 if (ni >= 0 && ni < m && nj >= 0 && nj < n)
                 {
-                    Node nghb = new Node(ni * n + nj, 32 - Math.Abs(thick[i, j] - thick[ni,nj]));
+                    Node nghb = new Node(ni * n + nj, 32 - Math.Abs(thick[i, j] - thick[ni,nj]), true);
                     graph[i * n + j].AddFirst(nghb);
                 }
             }
-            Node toT = new Node(m*n + 1, 32 - thick[i, j]); // add sink to adjacency list
+            Node toT = new Node(m*n + 1, 32 - thick[i, j], true); // add sink to adjacency list
             graph[i * n + j].AddFirst(toT);
             
-            Node fromS = new Node(i * n + j, thick[i, j]); // add this node to the source's adjacency list
+            Node fromS = new Node(i * n + j, thick[i, j], true); // add this node to the source's adjacency list
             graph[m * n].AddFirst(fromS);
         }
 
+
+        // returns linkedlist representing the found shortest path from s to t, returns null if no path exists
         static LinkedList<Node> BFS(LinkedList<Node>[] graph, int node)
         {
             
@@ -113,11 +143,11 @@ namespace IceRinks
                 }
             }
             int i = pred.Length - 1;
-
             LinkedList<Node> Path = new();
+            if (pred[i] == 0) return Path;
             while (pred[i] != -1)
             {
-                Path.AddFirst(graph[pred[i] -1].Find(new Node(i, 0)).Value);
+                Path.AddFirst(graph[pred[i] -1].Find(new Node(i, 0, true)).Value);
                 i = pred[i] - 1;
             }
             return Path; // returns path from s to t
@@ -144,17 +174,18 @@ namespace IceRinks
         public int Capacity;
         public bool Forward;
 
-        public Node(int Value, int Capacity)
+        public Node(int Pos, int Capacity, bool Forward)
         {
-            this.Pos = Value;
+            this.Pos = Pos;
             this.Flow = 0;
             this.Capacity = Capacity;
-            this.Forward = true;
+            this.Forward = Forward;
         }
 
         public override bool Equals(object obj)
         {
             var item = obj as Node;
+            if (item.Capacity == -1) return item.Pos == this.Pos && item.Forward == this.Forward;
             return item.Pos == this.Pos;
 
         }
