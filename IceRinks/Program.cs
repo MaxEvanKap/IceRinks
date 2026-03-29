@@ -40,8 +40,9 @@ namespace IceRinks
 
 
 
-            LinkedList<int> pred = BFS(graph, m * n);
-            foreach (int t in pred) Console.WriteLine(t);
+            LinkedList<Node> path = BFS(graph, m * n);
+            foreach (var t in path) Console.WriteLine(t);
+            Console.WriteLine("minimale capaciteit = " + minCapacity(path));
 
             
         }
@@ -89,7 +90,7 @@ namespace IceRinks
             graph[m * n].AddFirst(fromS);
         }
 
-        static LinkedList<int> BFS(LinkedList<Node>[] graph, int node)
+        static LinkedList<Node> BFS(LinkedList<Node>[] graph, int node)
         {
             
             int[] pred = new int[graph.Length];
@@ -112,14 +113,23 @@ namespace IceRinks
                 }
             }
             int i = pred.Length - 1;
-            LinkedList<int> Path = new(); Path.AddFirst(i);
+
+            LinkedList<Node> Path = new();
             while (pred[i] != -1)
             {
-                Path.AddFirst(pred[i] -1);
+                Path.AddFirst(graph[pred[i] -1].Find(new Node(i, 0)).Value);
                 i = pred[i] - 1;
             }
-            return Path; // returns start of path from s to t
+            return Path; // returns path from s to t
 
+        }
+
+        static int minCapacity(LinkedList<Node> path)
+        {
+            int t = 32;
+            foreach(Node a in path) 
+                if(t > a.Capacity) t = a.Capacity;
+            return t;
         }
     }
 
