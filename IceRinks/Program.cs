@@ -35,16 +35,44 @@ namespace IceRinks
                     AddNeighbours(i, j, thick, graph);
                 }
             }
+            /*
+            for (int i = 0; i < graph.Length; i++)
+            {
+                Console.WriteLine($"{i}: ");
+                foreach (Node a in graph[i])
+                {
+                    Console.Write(a);
+                }
+            }*/
+
             //create first residual graph as copy of original graph
             LinkedList<Node>[] residual = CreateResidualGraph(graph);
             EdmondsKarp(residual);
             int[] pred = BFS(residual, m * n);
             List<int> reachableS = Reachable(pred);
-            
+            /*for (int i = 0; i < graph.Length; i++)
+            {
+                Console.WriteLine($"{i}: ");
+                foreach (Node a in graph[i])
+                {
+                    Console.Write(a);
+                }
+            }*/
+
             int penalty = 0;
             
+            foreach (int t in reachableS)
+            {
+                foreach (Node a in graph[t])
+                {
+                    if (!reachableS.Contains(a.Pos))
+                        penalty += a.Capacity;
+                }
+            }
+            Console.WriteLine(penalty);
             if(mode == 1)
-                for (int i = 0; i < reachableS.Count; i++)
+                // do not want to print source so i < count - 1
+                for (int i = 0; i < reachableS.Count - 1; i++)
                 {
                     Console.WriteLine(reachableS[i]/n + " " + reachableS[i]%n);
                 }
@@ -52,6 +80,7 @@ namespace IceRinks
             
         }
 
+        // adds positions of all nodes with a predesessor
         static List<int> Reachable(int[] pred)
         {
             List<int> res = new List<int>();
@@ -59,6 +88,7 @@ namespace IceRinks
             {
                 if (pred[i] > 0) res.Add(i);
             }
+            res.Add(pred.Length - 2);
             return res;
         }
 
@@ -82,7 +112,7 @@ namespace IceRinks
                 residual[i] = new LinkedList<Node>();
                 foreach (var v in graph[i])
                 {
-                    residual[i].AddFirst(v);
+                    residual[i].AddFirst(new Node(v.Pos, v.Capacity, v.Forward));
                 }
             }
 
@@ -210,7 +240,7 @@ namespace IceRinks
 
         public override string ToString()
         {
-            return $"{Pos}, {Capacity}";
+            return $"({Pos}, {Capacity})";
         }
     }
 
