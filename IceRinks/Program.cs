@@ -8,6 +8,7 @@ namespace IceRinks
         //t = m * n + 1, s = m*n
         static void Main(string[] args)
         {
+            
             // read input
             int m = int.Parse(Console.ReadLine());
             int n = int.Parse(Console.ReadLine());
@@ -37,14 +38,28 @@ namespace IceRinks
             //create first residual graph as copy of original graph
             LinkedList<Node>[] residual = CreateResidualGraph(graph);
             EdmondsKarp(residual);
+            int[] pred = BFS(residual, m * n);
+            List<int> reachableS = Reachable(pred);
             
-
-
-            LinkedList<Node> path = BFS(graph, m * n);
-            foreach (var t in path) Console.WriteLine(t);
-            Console.WriteLine("minimale capaciteit = " + minCapacity(path));
-
+            int penalty = 0;
             
+            if(mode == 1)
+                for (int i = 0; i < reachableS.Count; i++)
+                {
+                    Console.WriteLine(reachableS[i]/n + " " + reachableS[i]%n);
+                }
+       
+            
+        }
+
+        static List<int> Reachable(int[] pred)
+        {
+            List<int> res = new List<int>();
+            for (int i = 0; i < pred.Length; i++)
+            {
+                if (pred[i] > 0) res.Add(i);
+            }
+            return res;
         }
 
         //Alters the residual graph until there is no more path from s to t (maximum flow)
@@ -52,7 +67,7 @@ namespace IceRinks
         {
             while (true)
             {
-                LinkedList<Node> path = BFS(graph, graph.Length - 2);
+                LinkedList<Node> path = ToPath(graph,BFS(graph, graph.Length - 2));
                 if (path == null) break;
                 AlterResidual(graph, path);
             }
@@ -120,7 +135,7 @@ namespace IceRinks
 
 
         // returns linkedlist representing the found shortest path from s to t, returns null if no path exists
-        static LinkedList<Node> BFS(LinkedList<Node>[] graph, int node)
+        static int[] BFS(LinkedList<Node>[] graph, int node)
         {
             
             int[] pred = new int[graph.Length];
@@ -142,18 +157,21 @@ namespace IceRinks
                     next = next.Next;
                 }
             }
-            int i = pred.Length - 1;
-            LinkedList<Node> Path = new();
-            if (pred[i] == 0) return Path;
-            while (pred[i] != -1)
-            {
-                Path.AddFirst(graph[pred[i] -1].Find(new Node(i, 0, true)).Value);
-                i = pred[i] - 1;
-            }
-            return Path; // returns path from s to t
-
+            return pred;
         }
 
+        static LinkedList<Node> ToPath(LinkedList<Node>[] graph, int[] pred)
+        {
+            int i = pred.Length - 1;
+            LinkedList<Node> Path = new();
+            if (pred[i] == 0) return null;
+            while (pred[i] != -1)
+            {
+                Path.AddFirst(graph[pred[i] - 1].Find(new Node(i, 0, true)).Value);
+                i = pred[i] - 1;
+            }
+            return Path;
+        }
         static int minCapacity(LinkedList<Node> path)
         {
             int t = 32;
